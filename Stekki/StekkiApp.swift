@@ -2,7 +2,8 @@
 //  StekkiApp.swift
 //  Stekki
 //
-//  Created by 濵口椋大 on 2026/07/11.
+//  デジタルシール帳アプリのエントリポイント。
+//  アカウント登録やサーバー通信は行わず、SwiftDataによるオンデバイス永続化のみで完結する。
 //
 
 import SwiftUI
@@ -12,7 +13,11 @@ import SwiftData
 struct StekkiApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            StickerBook.self,
+            StickerPage.self,
+            Sticker.self,
+            StickerPlacement.self,
+            PlacementHistory.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +30,7 @@ struct StekkiApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            BookListView()
         }
         .modelContainer(sharedModelContainer)
     }
