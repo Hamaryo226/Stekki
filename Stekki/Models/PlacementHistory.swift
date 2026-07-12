@@ -19,12 +19,14 @@ final class PlacementHistory {
     var bookTitleSnapshot: String?
     var pageDisplaySnapshot: String?
 
-    /// 操作が起きた時点の座標・拡縮・回転・重なり順
+    /// 操作が起きた時点の座標・拡縮・回転・重なり順・反転・影の有無
     var x: Double
     var y: Double
     var scale: Double
     var rotation: Double
     var zIndex: Int
+    var isFlippedHorizontally: Bool = false
+    var hasShadow: Bool = false
 
     var sticker: Sticker?
 
@@ -39,6 +41,8 @@ final class PlacementHistory {
         scale: Double,
         rotation: Double,
         zIndex: Int,
+        isFlippedHorizontally: Bool = false,
+        hasShadow: Bool = false,
         sticker: Sticker? = nil
     ) {
         self.id = id
@@ -51,6 +55,8 @@ final class PlacementHistory {
         self.scale = scale
         self.rotation = rotation
         self.zIndex = zIndex
+        self.isFlippedHorizontally = isFlippedHorizontally
+        self.hasShadow = hasShadow
         self.sticker = sticker
     }
 
@@ -67,7 +73,7 @@ final class PlacementHistory {
             }
             return "貼り付け"
         case .moved:
-            return "位置・角度を調整"
+            return "位置・見た目を調整"
         case .movedToPage:
             if let page = pageDisplaySnapshot, let book = bookTitleSnapshot {
                 return "「\(book)」\(page) へ移動"

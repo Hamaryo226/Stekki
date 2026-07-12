@@ -23,6 +23,10 @@ final class StickerPlacement {
     var rotation: Double
     /// 重なり順（大きいほど前面）
     var zIndex: Int
+    /// 左右反転しているか
+    var isFlippedHorizontally: Bool = false
+    /// 影を表示するか（貼ってあるだけでなく「浮いている」ような見た目にする）
+    var hasShadow: Bool = false
     /// この位置に貼られた／最後に更新された日時
     var placedAt: Date
 
@@ -36,6 +40,8 @@ final class StickerPlacement {
         scale: Double = 1.0,
         rotation: Double = 0.0,
         zIndex: Int = 0,
+        isFlippedHorizontally: Bool = false,
+        hasShadow: Bool = false,
         placedAt: Date = .now,
         sticker: Sticker? = nil,
         page: StickerPage? = nil
@@ -46,10 +52,18 @@ final class StickerPlacement {
         self.scale = scale
         self.rotation = rotation
         self.zIndex = zIndex
+        self.isFlippedHorizontally = isFlippedHorizontally
+        self.hasShadow = hasShadow
         self.placedAt = placedAt
         self.sticker = sticker
         self.page = page
     }
+}
+
+extension StickerPlacement {
+    /// 拡大率の許容範囲。ジェスチャ中のラバーバンドと確定時のクランプの両方で共通に使う
+    /// （ビューとViewModelで別々の値を持って食い違わないよう、ここに1箇所で定義する）。
+    static let scaleRange: ClosedRange<Double> = 0.25...4.0
 }
 
 extension Comparable {

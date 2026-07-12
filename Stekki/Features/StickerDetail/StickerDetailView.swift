@@ -8,6 +8,12 @@
 import SwiftUI
 import SwiftData
 
+/// 共有シートに渡す書き出し済みファイル（sheet(item:)用のIdentifiableラッパー）
+private struct StickerTradeShareItem: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
 struct StickerDetailView: View {
     let sticker: Sticker
     var onRemoveToTray: () -> Void
@@ -23,12 +29,16 @@ struct StickerDetailView: View {
     @State private var receivedAt = Date.now
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingFullPreview = false
+    @State private var shareItem: StickerTradeShareItem?
+    @State private var lastExportedFileURL: URL?
+    @State private var exportErrorMessage: String?
 
     var body: some View {
         NavigationStack {
             Form {
                 previewSection
                 metadataSection
+                sendSection
                 currentLocationSection
                 historySection
             }
@@ -65,6 +75,28 @@ struct StickerDetailView: View {
             }
             .fullScreenCover(isPresented: $isShowingFullPreview) {
                 StickerPreviewView(fileName: sticker.imageFileName)
+            }
+            .sheet(item: $shareItem, onDismiss: {
+                // 一時ディレクトリに書き出した .stickertrade を掃除する
+                // （onDismiss時点でshareItemはnilなので、URLは別途保持しておいたものを使う）
+                if let url = lastExportedFileURL {
+                    try? FileManager.default.removeItem(at: url)
+                    lastExportedFileURL = nil
+                }
+            }) { item in
+                ActivityShareSheet(activityItems: [item.url])
+                    .presentationDetents([.medium, .large])
+            }
+            .alert(
+                "送信ファイルを作成できませんでした",
+                isPresented: Binding(
+                    get: { exportErrorMessage != nil },
+                    set: { if !$0 { exportErrorMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(exportErrorMessage ?? "")
             }
         }
         .onAppear {
@@ -128,6 +160,30 @@ struct StickerDetailView: View {
         }
     }
 
+    private var sendSection: some View {
+        Section {
+            Button {
+                sendSticker()
+            } label: {
+                Label("このシールを送る", systemImage: "square.and.arrow.up")
+            }
+        } footer: {
+            Text("AirDropなどで .stickertrade ファイルとして送れます。相手が受け取ったかどうかは確認できないため、送ってもこのシールは手元に残ります。")
+        }
+    }
+
+    /// シールを .stickertrade に書き出して共有シート（AirDrop等）を開く
+    private func sendSticker() {
+        do {
+            let url = try StickerTradeExporter.exportFile(for: sticker)
+            lastExportedFileURL = url
+            shareItem = StickerTradeShareItem(url: url)
+        } catch {
+            exportErrorMessage = (error as? LocalizedError)?.errorDescription
+                ?? "送信用ファイルの作成に失敗しました。"
+        }
+    }
+
     @ViewBuilder
     private var currentLocationSection: some View {
         Section("現在の場所") {
@@ -135,12 +191,14 @@ struct StickerDetailView: View {
                 LabeledContent("シール帳", value: page.book?.title ?? "-")
                 LabeledContent("ページ", value: page.displayName)
                 LabeledContent("位置") {
-                    Text("x: \(Int(placement.x * 100))% ・ y: \(Int(placement.y * 100))%")
+                    Text(positionText(for: placement))
                 }
                 LabeledContent("拡大 / 回転") {
-                    Text("\(Int(placement.scale * 100))% ・ \(Int(placement.rotation * 180 / .pi))°")
+                    Text(transformText(for: placement))
                 }
                 LabeledContent("重なり順", value: "\(placement.zIndex)")
+                LabeledContent("左右反転", value: placement.isFlippedHorizontally ? "する" : "しない")
+                LabeledContent("影", value: placement.hasShadow ? "あり" : "なし")
 
                 Button(role: .destructive) {
                     onRemoveToTray()
@@ -173,5 +231,22 @@ struct StickerDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - 表示用テキスト
+    // Note: これらの数値計算を `Text` の文字列補間内に直接書くと、Swiftの型推論が
+    // 複雑になりすぎてビルドが極端に遅くなる／失敗することがあるため、
+    // 明示的な型を持つ独立したヘルパーに分離している。
+
+    private func positionText(for placement: StickerPlacement) -> String {
+        let xPercent: Int = Int(placement.x * 100)
+        let yPercent: Int = Int(placement.y * 100)
+        return "x: \(xPercent)% ・ y: \(yPercent)%"
+    }
+
+    private func transformText(for placement: StickerPlacement) -> String {
+        let scalePercent: Int = Int(placement.scale * 100)
+        let rotationDegrees: Int = Int(placement.rotation * 180 / .pi)
+        return "\(scalePercent)% ・ \(rotationDegrees)°"
     }
 }

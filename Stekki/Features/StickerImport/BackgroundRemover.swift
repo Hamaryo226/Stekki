@@ -96,24 +96,45 @@ enum BackgroundRemover {
         return pngData
     }
 
-    /// 画像の四隅を丸くする（角丸のアルファマスクを重ねる）。
-    /// - Parameter fraction: 0.0（角丸なし）〜0.5（短辺の半分、正方形なら完全な円/角丸最大）
-    static func applyCornerRadius(_ fraction: CGFloat, to pngData: Data) -> Data? {
-        guard fraction > 0.001, let image = UIImage(data: pngData) else { return pngData }
+    /// シールとして十分な解像度まで画像を縮小する。
+    /// - Note: シールは常に小さく表示される（ページ上では最大でも数百pt）ため、
+    ///   写真ライブラリの元画像（数千px）をそのまま保持する必要はない。
+    ///   ここで縮小しておくことで、角丸スライダーなどの再描画が軽くなり、
+    ///   ディスク容量・メモリ使用量も抑えられる。
+    static func downscaled(_ image: UIImage, maxDimension: CGFloat = 900) -> UIImage {
         let size = image.size
-        guard size.width > 0, size.height > 0 else { return pngData }
+        let longestSide = max(size.width, size.height)
+        guard longestSide > maxDimension, longestSide > 0 else { return image }
+
+        let scale = maxDimension / longestSide
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+
+    /// 画像の四隅を丸くする（角丸のアルファマスクを重ねる）。UIImageを直接受け取り、
+    /// 呼び出しごとにPNGのデコードをやり直さないため、スライダー操作時など連続で
+    /// 呼ばれる場面でも軽量に動作する。
+    /// - Parameter fraction: 0.0（角丸なし）〜0.5（短辺の半分、正方形なら完全な円/角丸最大）
+    static func applyCornerRadius(_ fraction: CGFloat, to image: UIImage) -> UIImage {
+        guard fraction > 0.001 else { return image }
+        let size = image.size
+        guard size.width > 0, size.height > 0 else { return image }
 
         let radius = min(size.width, size.height) * fraction.clamped(to: 0...0.5)
         let format = UIGraphicsImageRendererFormat.default()
         format.opaque = false
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
 
-        let rounded = renderer.image { _ in
+        return renderer.image { _ in
             let rect = CGRect(origin: .zero, size: size)
             UIBezierPath(roundedRect: rect, cornerRadius: radius).addClip()
             image.draw(in: rect)
         }
-        return rounded.pngData() ?? pngData
     }
 
     /// トレイ表示用の軽量サムネイル（長辺200pt程度）を生成する

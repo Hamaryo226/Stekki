@@ -8,7 +8,7 @@
 import Foundation
 
 /// PlacementHistory に記録される、シールに対して行われた操作の種類。
-enum PlacementAction: String, Codable, CaseIterable {
+enum PlacementAction: String, Codable, CaseIterable, Hashable {
     /// トレイからページへ新規に貼り付けた
     case placed
     /// 同一ページ内で位置・拡大縮小・回転・重なり順を変更した

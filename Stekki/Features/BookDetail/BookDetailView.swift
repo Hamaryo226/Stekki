@@ -17,8 +17,17 @@ struct BookDetailView: View {
     @State private var currentPageIndex = 0
     @State private var selectedSticker: Sticker?
     @State private var isShowingStickerImport = false
+    @State private var isShowingTextStickerCreate = false
     @State private var isShowingDeletePageConfirm = false
     @State private var isEditMode = false
+    /// "bookCanvas" 座標空間における未貼付トレイの矩形。シールをドラッグでトレイへ
+    /// 戻す判定（トレイの上に重なっているか）に使う。トレイが非表示の間は .zero。
+    @State private var trayFrame: CGRect = .zero
+    /// シールをドラッグ中、指がトレイの高さに達しているか（トレイのハイライト表示用）
+    @State private var isTrayDropTargeted = false
+    /// ドラッグ中のシールを最前面へ持ち上げて表示するためのドラッグ層。
+    /// トレイへ運ぶ間、ページのクリップやトレイのz順序に邪魔されず、シールをトレイの上まで見せる。
+    @State private var dragLayer = StickerDragLayerModel()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +39,7 @@ struct BookDetailView: View {
                         PageCanvasView(
                             page: page,
                             isEditMode: isEditMode,
+                            trayFrame: trayFrame,
                             onDropSticker: { stickerID, point in
                                 viewModel?.place(stickerID: stickerID, onto: page, at: point)
                             },
@@ -39,12 +49,27 @@ struct BookDetailView: View {
                             onMovePlacement: { placement, x, y in
                                 viewModel?.updatePosition(placement, x: x, y: y)
                             },
-                            onTransformPlacement: { placement, scale, rotation in
-                                viewModel?.updateTransform(placement, scale: scale, rotation: rotation)
+                            onTransformPlacement: { placement, scale, rotation, center in
+                                viewModel?.updateTransform(placement, scale: scale, rotation: rotation, x: center.x, y: center.y)
                             },
                             onBringToFront: { placement in
                                 viewModel?.bringToFront(placement)
-                            }
+                            },
+                            onFlipPlacement: { placement in
+                                viewModel?.toggleFlip(placement)
+                            },
+                            onToggleShadowPlacement: { placement in
+                                viewModel?.toggleShadow(placement)
+                            },
+                            onReturnPlacementToTray: { placement in
+                                if let sticker = placement.sticker {
+                                    viewModel?.removeToTray(sticker)
+                                }
+                            },
+                            onTrayHoverChanged: { hovering in
+                                isTrayDropTargeted = hovering
+                            },
+                            dragLayer: dragLayer
                         )
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
@@ -60,10 +85,34 @@ struct BookDetailView: View {
 
             if isEditMode {
                 StickerTrayView(
-                    onImportTapped: { isShowingStickerImport = true },
+                    isDropTargetActive: isTrayDropTargeted,
+                    onImportFromPhotoTapped: { isShowingStickerImport = true },
+                    onCreateTextStickerTapped: { isShowingTextStickerCreate = true },
                     onSelectSticker: { sticker in selectedSticker = sticker }
                 )
+                .background(
+                    GeometryReader { trayGeo in
+                        Color.clear
+                            .preference(key: TrayFramePreferenceKey.self, value: trayGeo.frame(in: .named("bookCanvas")))
+                    }
+                )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        // ドラッグ中のシールを最前面へ持ち上げる層。トレイより手前・ページのクリップ外に
+        // 描くことで、トレイへ運ぶ間もシールがトレイの上まで見えたまま追従する。
+        .overlay {
+            StickerDragLayer(model: dragLayer)
+        }
+        .coordinateSpace(name: "bookCanvas")
+        .onPreferenceChange(TrayFramePreferenceKey.self) { newFrame in
+            trayFrame = newFrame
+        }
+        .onChange(of: isEditMode) { _, newValue in
+            if !newValue {
+                trayFrame = .zero
+                isTrayDropTargeted = false
+                dragLayer.preview = nil
             }
         }
         .animation(StekkiSpring.sheet, value: isEditMode)
@@ -131,6 +180,9 @@ struct BookDetailView: View {
         }
         .sheet(isPresented: $isShowingStickerImport) {
             StickerImportView()
+        }
+        .sheet(isPresented: $isShowingTextStickerCreate) {
+            TextStickerCreateView()
         }
         .onAppear {
             if viewModel == nil {

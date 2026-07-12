@@ -30,4 +30,7 @@ enum StekkiSpring {
 
     /// 軽いフィードバック（ボタン押下など）
     static let tap: Animation = .easeOut(duration: 0.1)
+
+    /// シールをドラッグでトレイへ戻す際、吸い込まれるように縮小・フェードするとき
+    static let returnToTray: Animation = .spring(response: 0.26, dampingFraction: 0.9)
 }

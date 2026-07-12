@@ -25,12 +25,24 @@ struct PlacementHistoryRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if entry.action == .moved || entry.action == .placed || entry.action == .movedToPage {
-                    Text("x: \(Int(entry.x * 100))% ・ y: \(Int(entry.y * 100))% ・ 拡大: \(Int(entry.scale * 100))% ・ 回転: \(Int(entry.rotation * 180 / .pi))°")
+                    Text(transformSummaryText)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
             }
             Spacer()
         }
+    }
+
+    /// 「x: 50% ・ y: 30% ・ 拡大: 100% ・ 回転: 15°」のような表示文字列。
+    /// - Note: この計算を `Text` の文字列補間内に直接書くと、Swiftの型推論が
+    ///   複雑になりすぎてビルドが極端に遅くなる／失敗することがあるため、
+    ///   明示的な型を持つ独立した計算プロパティに分離している。
+    private var transformSummaryText: String {
+        let xPercent: Int = Int(entry.x * 100)
+        let yPercent: Int = Int(entry.y * 100)
+        let scalePercent: Int = Int(entry.scale * 100)
+        let rotationDegrees: Int = Int(entry.rotation * 180 / .pi)
+        return "x: \(xPercent)% ・ y: \(yPercent)% ・ 拡大: \(scalePercent)% ・ 回転: \(rotationDegrees)°"
     }
 }

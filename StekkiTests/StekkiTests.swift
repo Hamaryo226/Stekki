@@ -73,4 +73,34 @@ struct StekkiTests {
         #expect(placement.x == 1.0)
         #expect(placement.y == 0.0)
     }
+
+    @Test @MainActor func transformCommitsScaleRotationAndPositionAtOnce() throws {
+        let context = try makeInMemoryContext()
+        let bookVM = BookListViewModel(modelContext: context)
+        let book = bookVM.createBook(title: "帳")
+        let page = book.sortedPages[0]
+
+        let sticker = Sticker(imageFileName: "dummy.png", authorDisplayName: "自分")
+        context.insert(sticker)
+
+        let detailVM = BookDetailViewModel(book: book, modelContext: context)
+        detailVM.place(stickerID: sticker.id, onto: page, at: CGPoint(x: 0.5, y: 0.5))
+        let placement = try #require(sticker.placement)
+        let historyCountBefore = sticker.history.count
+
+        // ピンチは支点固定のため位置も同時に動く。1回の確定で履歴も1件だけ増えること。
+        detailVM.updateTransform(placement, scale: 2.0, rotation: .pi / 2, x: 0.7, y: 0.6)
+
+        #expect(placement.scale == 2.0)
+        #expect(placement.rotation == .pi / 2)
+        #expect(placement.x == 0.7)
+        #expect(placement.y == 0.6)
+        #expect(sticker.history.count == historyCountBefore + 1)
+
+        // 拡大率と座標は共通の許容範囲へクランプされること
+        detailVM.updateTransform(placement, scale: 100, rotation: 0, x: 1.5, y: -0.2)
+        #expect(placement.scale == StickerPlacement.scaleRange.upperBound)
+        #expect(placement.x == 1.0)
+        #expect(placement.y == 0.0)
+    }
 }

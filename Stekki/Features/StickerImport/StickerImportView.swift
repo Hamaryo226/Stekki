@@ -44,11 +44,19 @@ struct StickerImportView: View {
                             HStack {
                                 Text("角を丸くする")
                                 Spacer()
-                                Text("\(Int(cornerRadiusFraction / 0.5 * 100))%")
+                                Text(cornerRadiusPercentText)
                                     .foregroundStyle(.secondary)
                                     .monospacedDigit()
                             }
-                            Slider(value: $cornerRadiusFraction, in: 0...0.5)
+                            Slider(
+                                value: $cornerRadiusFraction,
+                                in: 0...0.5,
+                                onEditingChanged: { isEditing in
+                                    if !isEditing {
+                                        viewModel.commitCornerRadius(cornerRadiusFraction)
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -117,9 +125,19 @@ struct StickerImportView: View {
                 }
             }
             .onChange(of: cornerRadiusFraction) { _, newValue in
-                viewModel?.updateCornerRadius(newValue)
+                viewModel?.previewCornerRadius(newValue)
             }
         }
+    }
+
+    /// 角丸スライダーの横に表示する「◯%」表示。
+    /// - Note: この計算を `Text` の文字列補間内に直接書くと、Swiftの型推論が
+    ///   複雑になりすぎてビルドが極端に遅くなる／失敗することがあるため、
+    ///   明示的な型を持つ独立した計算プロパティに分離している。
+    private var cornerRadiusPercentText: String {
+        let ratio: Double = cornerRadiusFraction / 0.5
+        let percent: Int = Int(ratio * 100)
+        return "\(percent)%"
     }
 
     @ViewBuilder
@@ -139,7 +157,7 @@ struct StickerImportView: View {
                         .padding(20)
                 } else {
                     VStack(spacing: 10) {
-                        Image(systemName: "photo.badge.plus")
+                        Image(systemName: "photo.on.rectangle")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary)
                         Text(

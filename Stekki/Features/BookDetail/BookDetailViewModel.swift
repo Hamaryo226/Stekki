@@ -96,10 +96,14 @@ final class BookDetailViewModel {
         save()
     }
 
-    /// 拡大縮小・回転の変更
-    func updateTransform(_ placement: StickerPlacement, scale: Double, rotation: Double) {
-        placement.scale = scale.clamped(to: 0.4...3.0)
+    /// 拡大縮小・回転・位置の変更を1回の操作として確定する。
+    /// ピンチは指の中心を支点に拡縮・回転するため中心位置も同時に動く。
+    /// 別々にコミットすると履歴が2件に分かれ、保存も2回走るため、まとめて受け取る。
+    func updateTransform(_ placement: StickerPlacement, scale: Double, rotation: Double, x: Double, y: Double) {
+        placement.scale = scale.clamped(to: StickerPlacement.scaleRange)
         placement.rotation = rotation
+        placement.x = x.clamped(to: 0...1)
+        placement.y = y.clamped(to: 0...1)
         placement.placedAt = .now
         if let sticker = placement.sticker {
             logHistory(sticker: sticker, action: .moved, page: placement.page, placement: placement)
@@ -113,6 +117,26 @@ final class BookDetailViewModel {
         let top = page.nextZIndex
         guard placement.zIndex != top - 1 else { return }
         placement.zIndex = top
+        save()
+    }
+
+    /// 左右反転をトグルする
+    func toggleFlip(_ placement: StickerPlacement) {
+        placement.isFlippedHorizontally.toggle()
+        placement.placedAt = .now
+        if let sticker = placement.sticker {
+            logHistory(sticker: sticker, action: .moved, page: placement.page, placement: placement)
+        }
+        save()
+    }
+
+    /// 影のON/OFFをトグルする
+    func toggleShadow(_ placement: StickerPlacement) {
+        placement.hasShadow.toggle()
+        placement.placedAt = .now
+        if let sticker = placement.sticker {
+            logHistory(sticker: sticker, action: .moved, page: placement.page, placement: placement)
+        }
         save()
     }
 
@@ -137,6 +161,8 @@ final class BookDetailViewModel {
             scale: placement.scale,
             rotation: placement.rotation,
             zIndex: placement.zIndex,
+            isFlippedHorizontally: placement.isFlippedHorizontally,
+            hasShadow: placement.hasShadow,
             sticker: sticker
         )
         modelContext.insert(entry)

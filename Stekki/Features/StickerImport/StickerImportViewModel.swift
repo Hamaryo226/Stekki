@@ -20,9 +20,10 @@ final class StickerImportViewModel {
     var isProcessing = false
     var errorMessage: String?
 
-    /// 背景除去（あり/なし）を反映した、角丸加工前の画像データ。
-    /// スライダー操作のたびにVisionを再実行しないよう、これをキャッシュしておく。
-    private var baseImageData: Data?
+    /// 背景除去（あり/なし）＆縮小を反映した、角丸加工前の画像（メモリ上に保持）。
+    /// スライダー操作のたびにVisionの再実行やPNGの再デコードをしないよう、
+    /// デコード済みのUIImageのままキャッシュしておく（角丸の再適用だけを軽量に行うため）。
+    private var baseImage: UIImage?
     /// 実際に保存される画像データ（角丸加工後）
     private var pngData: Data?
     private var thumbnailData: Data?
@@ -40,7 +41,7 @@ final class StickerImportViewModel {
         isProcessing = true
         errorMessage = nil
         processedImage = nil
-        baseImageData = nil
+        baseImage = nil
         pngData = nil
         thumbnailData = nil
 
@@ -57,25 +58,34 @@ final class StickerImportViewModel {
                 resultData = try BackgroundRemover.makeOpaqueSticker(from: uiImage)
             }
 
-            baseImageData = resultData
-            applyCornerRadius(cornerRadiusFraction)
+            guard let decoded = UIImage(data: resultData) else {
+                throw BackgroundRemoverError.processingFailed(detail: "画像のデコードに失敗")
+            }
+            // シールとして十分な解像度まで縮小してからメモリに保持する。
+            // 以降の角丸スライダー操作はこの縮小済み画像に対して行うため軽量。
+            baseImage = BackgroundRemover.downscaled(decoded)
+            commitCornerRadius(cornerRadiusFraction)
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "処理に失敗しました。もう一度お試しください。"
         }
         isProcessing = false
     }
 
-    /// スライダー操作時など、Visionを再実行せず角丸だけを軽量に再適用する
-    func updateCornerRadius(_ fraction: Double) {
-        applyCornerRadius(fraction)
+    /// スライダーをドラッグしている間に呼ぶ、表示プレビューだけを更新する軽量な処理。
+    /// PNGエンコードは行わないため、指を動かしている間も滑らかに追従できる。
+    func previewCornerRadius(_ fraction: Double) {
+        guard let baseImage else { return }
+        processedImage = BackgroundRemover.applyCornerRadius(CGFloat(fraction), to: baseImage)
     }
 
-    private func applyCornerRadius(_ fraction: Double) {
-        guard let baseImageData else { return }
-        let rounded = BackgroundRemover.applyCornerRadius(CGFloat(fraction), to: baseImageData) ?? baseImageData
-        pngData = rounded
-        thumbnailData = BackgroundRemover.makeThumbnail(from: rounded)
-        processedImage = UIImage(data: rounded)
+    /// スライダーから指を離した時などに呼ぶ、保存用データ（PNG・サムネイル）を確定する処理
+    func commitCornerRadius(_ fraction: Double) {
+        guard let baseImage else { return }
+        let rounded = BackgroundRemover.applyCornerRadius(CGFloat(fraction), to: baseImage)
+        processedImage = rounded
+        let rawData = rounded.pngData()
+        pngData = rawData
+        thumbnailData = rawData.flatMap { BackgroundRemover.makeThumbnail(from: $0) }
     }
 
     var canSave: Bool { pngData != nil }
@@ -113,7 +123,7 @@ final class StickerImportViewModel {
 
     func reset() {
         processedImage = nil
-        baseImageData = nil
+        baseImage = nil
         pngData = nil
         thumbnailData = nil
         errorMessage = nil

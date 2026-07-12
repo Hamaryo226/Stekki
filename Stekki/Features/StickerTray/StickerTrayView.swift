@@ -10,7 +10,12 @@ import SwiftUI
 import SwiftData
 
 struct StickerTrayView: View {
-    var onImportTapped: () -> Void
+    /// 貼付済みシールをドラッグ中、指がトレイの高さまで来ているか。
+    /// ページ外はクリップされてシールが見えなくなるため、代わりにトレイ側を
+    /// ハイライトして「ここで離すとトレイに戻る」ことを伝える。
+    var isDropTargetActive: Bool = false
+    var onImportFromPhotoTapped: () -> Void
+    var onCreateTextStickerTapped: () -> Void
     var onSelectSticker: (Sticker) -> Void
 
     @Query(
@@ -23,13 +28,30 @@ struct StickerTrayView: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("未貼付トレイ")
-                    .font(.system(.subheadline, design: .rounded).bold())
-                Text("\(trayStickers.count)枚")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if isDropTargetActive {
+                    Label("ここで離すとトレイに戻ります", systemImage: "tray.and.arrow.down.fill")
+                        .font(.system(.subheadline, design: .rounded).bold())
+                        .foregroundStyle(Color.accentColor)
+                } else {
+                    Text("未貼付トレイ")
+                        .font(.system(.subheadline, design: .rounded).bold())
+                    Text("\(trayStickers.count)枚")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
-                Button(action: onImportTapped) {
+                Menu {
+                    Button {
+                        onImportFromPhotoTapped()
+                    } label: {
+                        Label("写真から作成", systemImage: "photo.on.rectangle")
+                    }
+                    Button {
+                        onCreateTextStickerTapped()
+                    } label: {
+                        Label("テキストで作成", systemImage: "textformat")
+                    }
+                } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
                 }
@@ -53,6 +75,13 @@ struct StickerTrayView: View {
         }
         .padding(.vertical, 14)
         .floatingMaterial(cornerRadius: 28)
+        .overlay(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(Color.accentColor, lineWidth: 2.5)
+                .opacity(isDropTargetActive ? 1 : 0)
+        )
+        .scaleEffect(isDropTargetActive ? 1.02 : 1)
+        .animation(StekkiSpring.drag, value: isDropTargetActive)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
     }
