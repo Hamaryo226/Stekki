@@ -27,6 +27,8 @@ final class StickerPlacement {
     var isFlippedHorizontally: Bool = false
     /// 影を表示するか（貼ってあるだけでなく「浮いている」ような見た目にする）
     var hasShadow: Bool = false
+    /// 貼付後にかけるエフェクト（StickerEffect.rawValue を保存する）
+    var effectRawValue: String = "none"
     /// この位置に貼られた／最後に更新された日時
     var placedAt: Date
 
@@ -42,6 +44,7 @@ final class StickerPlacement {
         zIndex: Int = 0,
         isFlippedHorizontally: Bool = false,
         hasShadow: Bool = false,
+        effect: StickerEffect = .none,
         placedAt: Date = .now,
         sticker: Sticker? = nil,
         page: StickerPage? = nil
@@ -54,6 +57,7 @@ final class StickerPlacement {
         self.zIndex = zIndex
         self.isFlippedHorizontally = isFlippedHorizontally
         self.hasShadow = hasShadow
+        self.effectRawValue = effect.rawValue
         self.placedAt = placedAt
         self.sticker = sticker
         self.page = page
@@ -61,6 +65,12 @@ final class StickerPlacement {
 }
 
 extension StickerPlacement {
+    /// 保存されているエフェクト。未知の値（将来のバージョンで追加された値など）は「なし」として扱う。
+    var effect: StickerEffect {
+        get { StickerEffect(rawValue: effectRawValue) ?? StickerEffect.none }
+        set { effectRawValue = newValue.rawValue }
+    }
+
     /// 拡大率の許容範囲。ジェスチャ中のラバーバンドと確定時のクランプの両方で共通に使う
     /// （ビューとViewModelで別々の値を持って食い違わないよう、ここに1箇所で定義する）。
     static let scaleRange: ClosedRange<Double> = 0.25...4.0

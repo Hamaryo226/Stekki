@@ -103,4 +103,47 @@ struct StekkiTests {
         #expect(placement.x == 1.0)
         #expect(placement.y == 0.0)
     }
+
+    @Test @MainActor func cyclingEffectAdvancesAndWrapsAround() throws {
+        let context = try makeInMemoryContext()
+        let bookVM = BookListViewModel(modelContext: context)
+        let book = bookVM.createBook(title: "帳")
+        let page = book.sortedPages[0]
+
+        let sticker = Sticker(imageFileName: "dummy.png", authorDisplayName: "自分")
+        context.insert(sticker)
+
+        let detailVM = BookDetailViewModel(book: book, modelContext: context)
+        detailVM.place(stickerID: sticker.id, onto: page, at: CGPoint(x: 0.5, y: 0.5))
+        let placement = try #require(sticker.placement)
+
+        // 貼った直後はエフェクトなし
+        #expect(placement.effect == StickerEffect.none)
+
+        // なし → 白フチ → キラキラ → なし と循環する
+        detailVM.cycleEffect(placement)
+        #expect(placement.effect == .whiteOutline)
+        detailVM.cycleEffect(placement)
+        #expect(placement.effect == .glow)
+        detailVM.cycleEffect(placement)
+        #expect(placement.effect == StickerEffect.none)
+    }
+
+    @Test func unknownEffectRawValueFallsBackToNone() {
+        let placement = StickerPlacement(x: 0.5, y: 0.5)
+        placement.effectRawValue = "future-effect"
+        #expect(placement.effect == StickerEffect.none)
+    }
+
+    @Test func textStickerIsIdentifiedBySpecJSON() {
+        let photo = Sticker(imageFileName: "a.png", authorDisplayName: "自分")
+        #expect(photo.isTextSticker == false)
+
+        let text = Sticker(
+            imageFileName: "b.png",
+            authorDisplayName: "自分",
+            textSpecJSON: TextStickerSpec.initial.encodedJSON()
+        )
+        #expect(text.isTextSticker == true)
+    }
 }

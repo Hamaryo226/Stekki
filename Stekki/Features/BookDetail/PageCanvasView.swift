@@ -22,6 +22,10 @@ struct PageCanvasView: View {
     var onBringToFront: (StickerPlacement) -> Void
     var onFlipPlacement: (StickerPlacement) -> Void
     var onToggleShadowPlacement: (StickerPlacement) -> Void
+    /// エフェクト（なし→白フチ→キラキラ→…）を1つ進める
+    var onCycleEffectPlacement: (StickerPlacement) -> Void
+    /// テキストシールの文字を再編集する
+    var onEditTextPlacement: (StickerPlacement) -> Void
     var onReturnPlacementToTray: (StickerPlacement) -> Void
     /// シールのドラッグ中、指がトレイの高さに達したかどうかの変化（トレイのハイライト用）
     var onTrayHoverChanged: (Bool) -> Void
@@ -86,6 +90,8 @@ struct PageCanvasView: View {
                         onBringToFront: { onBringToFront(placement) },
                         onFlip: { onFlipPlacement(placement) },
                         onToggleShadow: { onToggleShadowPlacement(placement) },
+                        onCycleEffect: { onCycleEffectPlacement(placement) },
+                        onEditText: { onEditTextPlacement(placement) },
                         onTap: { onTapPlacement(placement) },
                         onReturnToTray: {
                             if selectedPlacementID == placement.id { selectedPlacementID = nil }

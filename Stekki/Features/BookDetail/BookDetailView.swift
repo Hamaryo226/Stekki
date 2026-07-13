@@ -18,6 +18,8 @@ struct BookDetailView: View {
     @State private var selectedSticker: Sticker?
     @State private var isShowingStickerImport = false
     @State private var isShowingTextStickerCreate = false
+    /// 文字を再編集中のテキストシール（フルスクリーンのエディタを開く）
+    @State private var editingTextSticker: Sticker?
     @State private var isShowingDeletePageConfirm = false
     @State private var isEditMode = false
     /// "bookCanvas" 座標空間における未貼付トレイの矩形。シールをドラッグでトレイへ
@@ -60,6 +62,12 @@ struct BookDetailView: View {
                             },
                             onToggleShadowPlacement: { placement in
                                 viewModel?.toggleShadow(placement)
+                            },
+                            onCycleEffectPlacement: { placement in
+                                viewModel?.cycleEffect(placement)
+                            },
+                            onEditTextPlacement: { placement in
+                                editingTextSticker = placement.sticker
                             },
                             onReturnPlacementToTray: { placement in
                                 if let sticker = placement.sticker {
@@ -181,8 +189,12 @@ struct BookDetailView: View {
         .sheet(isPresented: $isShowingStickerImport) {
             StickerImportView()
         }
-        .sheet(isPresented: $isShowingTextStickerCreate) {
-            TextStickerCreateView()
+        // テキストシールの作成・再編集はIGストーリー風のフルスクリーンエディタで行う
+        .fullScreenCover(isPresented: $isShowingTextStickerCreate) {
+            TextStickerEditorView()
+        }
+        .fullScreenCover(item: $editingTextSticker) { sticker in
+            TextStickerEditorView(editingSticker: sticker)
         }
         .onAppear {
             if viewModel == nil {

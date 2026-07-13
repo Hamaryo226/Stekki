@@ -29,6 +29,8 @@ struct StickerDetailView: View {
     @State private var receivedAt = Date.now
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingFullPreview = false
+    /// テキストシールの文字再編集エディタを開いているか
+    @State private var isShowingTextEditor = false
     @State private var shareItem: StickerTradeShareItem?
     @State private var lastExportedFileURL: URL?
     @State private var exportErrorMessage: String?
@@ -75,6 +77,9 @@ struct StickerDetailView: View {
             }
             .fullScreenCover(isPresented: $isShowingFullPreview) {
                 StickerPreviewView(fileName: sticker.imageFileName)
+            }
+            .fullScreenCover(isPresented: $isShowingTextEditor) {
+                TextStickerEditorView(editingSticker: sticker)
             }
             .sheet(item: $shareItem, onDismiss: {
                 // 一時ディレクトリに書き出した .stickertrade を掃除する
@@ -160,7 +165,20 @@ struct StickerDetailView: View {
         }
     }
 
+    @ViewBuilder
     private var sendSection: some View {
+        if sticker.isTextSticker {
+            Section {
+                Button {
+                    isShowingTextEditor = true
+                } label: {
+                    Label("文字を編集", systemImage: "character.cursor.ibeam")
+                }
+            } footer: {
+                Text("テキストシールは、作った後からでも文字・フォント・色などを編集し直せます。")
+            }
+        }
+
         Section {
             Button {
                 sendSticker()
@@ -199,6 +217,7 @@ struct StickerDetailView: View {
                 LabeledContent("重なり順", value: "\(placement.zIndex)")
                 LabeledContent("左右反転", value: placement.isFlippedHorizontally ? "する" : "しない")
                 LabeledContent("影", value: placement.hasShadow ? "あり" : "なし")
+                LabeledContent("エフェクト", value: placement.effect.displayName)
 
                 Button(role: .destructive) {
                     onRemoveToTray()

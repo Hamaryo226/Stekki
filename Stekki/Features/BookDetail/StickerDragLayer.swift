@@ -23,6 +23,8 @@ struct DraggedStickerPreview: Equatable {
     var scale: CGFloat
     var rotation: Angle
     var flipped: Bool
+    /// 貼付に適用中のエフェクト（持ち上げ中も同じ見た目で運ぶ）
+    var effect: StickerEffect
     /// トレイの上にあり「離すと戻る」状態か（縮小表示にする）
     var overTray: Bool
 }
@@ -45,7 +47,7 @@ struct StickerDragLayer: View {
     var body: some View {
         GeometryReader { _ in
             if let preview = model.preview {
-                StickerImageView(fileName: preview.fileName)
+                StickerImageView(fileName: preview.fileName, effect: preview.effect)
                     .frame(width: baseSize, height: baseSize)
                     .scaleEffect(x: (preview.flipped ? -1 : 1) * preview.scale, y: preview.scale)
                     .rotationEffect(preview.rotation)

@@ -59,4 +59,16 @@ enum StickerTextFont: String, CaseIterable, Identifiable, Hashable {
         case .typewriter: return .custom("AmericanTypewriter-Bold", size: 16)
         }
     }
+
+    /// エディタでの直接入力表示に使う、サイズ指定つきのSwiftUI Font
+    /// （uiFont(size:) と同じ書体になるように揃えている）
+    func swiftUIFont(size: CGFloat) -> Font {
+        switch self {
+        case .system: return .system(size: size, weight: .heavy)
+        case .rounded: return .system(size: size, weight: .heavy, design: .rounded)
+        case .handwriting: return .custom("MarkerFelt-Wide", size: size)
+        case .cute: return .custom("ChalkboardSE-Bold", size: size)
+        case .typewriter: return .custom("AmericanTypewriter-Bold", size: size)
+        }
+    }
 }

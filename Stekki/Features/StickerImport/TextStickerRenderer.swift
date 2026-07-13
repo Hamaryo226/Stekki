@@ -25,6 +25,7 @@ enum TextStickerRenderer {
     ///   - style: 文字の形（なし／アーチ／波／ふくらみ）
     ///   - styleIntensity: 形の強さ（-1〜+1）。絶対値がほぼ0なら「なし」と同じ。
     ///   - plateColor: 指定すると文字の背景に角丸のプレートを敷く（nilならプレートなし）
+    ///   - alignment: 複数行のときの行揃え（左・中央・右のみ対応。それ以外は中央として扱う）
     static func render(
         text: String,
         font: StickerTextFont,
@@ -34,7 +35,8 @@ enum TextStickerRenderer {
         style: StickerTextStyle = .plain,
         styleIntensity: CGFloat = 0,
         plateColor: UIColor? = nil,
-        fontSize: CGFloat = 72
+        fontSize: CGFloat = 72,
+        alignment: NSTextAlignment = .center
     ) -> UIImage? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -97,8 +99,15 @@ enum TextStickerRenderer {
 
             var lineTop = padding
             for layout in lineLayouts {
-                // 行を水平センタリングし、行のバウンディング原点を打ち消して配置する
-                let originX = padding + (contentWidth - layout.bounds.width) / 2 - layout.bounds.minX
+                // 行揃えに応じて行の水平位置を決め、行のバウンディング原点を打ち消して配置する
+                let slack = contentWidth - layout.bounds.width
+                let alignmentOffset: CGFloat
+                switch alignment {
+                case .left: alignmentOffset = 0
+                case .right: alignmentOffset = slack
+                default: alignmentOffset = slack / 2
+                }
+                let originX = padding + alignmentOffset - layout.bounds.minX
                 let originY = lineTop - layout.bounds.minY
                 for ch in layout.placements {
                     ctx.saveGState()

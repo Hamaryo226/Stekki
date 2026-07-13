@@ -74,4 +74,23 @@ struct TextStickerRendererTests {
         let multi = try #require(render("あいう\nかきく"))
         #expect(multi.size.height > single.size.height)
     }
+
+    @Test func alignmentDoesNotChangeCanvasSize() throws {
+        // 行揃えは行の配置だけを変え、キャンバス全体の大きさは変えない
+        func renderAligned(_ alignment: NSTextAlignment) -> UIImage? {
+            TextStickerRenderer.render(
+                text: "みじかい\nながいながい行",
+                font: .system,
+                textColor: .black,
+                strokeColor: .white,
+                strokeWidth: 2,
+                alignment: alignment
+            )
+        }
+        let center = try #require(renderAligned(.center))
+        let left = try #require(renderAligned(.left))
+        let right = try #require(renderAligned(.right))
+        #expect(left.size == center.size)
+        #expect(right.size == center.size)
+    }
 }

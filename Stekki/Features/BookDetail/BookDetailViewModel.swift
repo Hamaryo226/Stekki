@@ -140,6 +140,16 @@ final class BookDetailViewModel {
         save()
     }
 
+    /// エフェクトを次のものへ切り替える（なし→白フチ→キラキラ→なし…）
+    func cycleEffect(_ placement: StickerPlacement) {
+        placement.effect = placement.effect.next
+        placement.placedAt = .now
+        if let sticker = placement.sticker {
+            logHistory(sticker: sticker, action: .moved, page: placement.page, placement: placement)
+        }
+        save()
+    }
+
     /// ページから剥がしてトレイへ戻す
     func removeToTray(_ sticker: Sticker) {
         guard let placement = sticker.placement else { return }

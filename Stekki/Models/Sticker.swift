@@ -30,6 +30,11 @@ final class Sticker {
     /// トレイから非表示にする（削除はしないがUI上隠す）場合に使用
     var isArchived: Bool
 
+    /// テキストシールの場合、元の文字・フォント・色などの仕様（TextStickerSpec のJSON）。
+    /// これを保持しておくことで、作った後・貼った後からでも文字を再編集できる。
+    /// 写真から作ったシールでは nil。
+    var textSpecJSON: String? = nil
+
     /// 現在の貼付状態。nil の場合は未貼付トレイにある。
     @Relationship(deleteRule: .cascade, inverse: \StickerPlacement.sticker)
     var placement: StickerPlacement?
@@ -46,7 +51,8 @@ final class Sticker {
         authorDisplayName: String,
         receivedAt: Date? = nil,
         receivedFrom: String? = nil,
-        isArchived: Bool = false
+        isArchived: Bool = false,
+        textSpecJSON: String? = nil
     ) {
         self.id = id
         self.imageFileName = imageFileName
@@ -56,10 +62,14 @@ final class Sticker {
         self.receivedAt = receivedAt
         self.receivedFrom = receivedFrom
         self.isArchived = isArchived
+        self.textSpecJSON = textSpecJSON
     }
 
     /// 現在貼られているか（トレイにあるかどうかの逆）
     var isPlaced: Bool { placement != nil }
+
+    /// 文字から作ったシールか（再編集できるのはこの場合のみ）
+    var isTextSticker: Bool { textSpecJSON != nil }
 
     /// 履歴を新しい順に並べたもの
     var sortedHistory: [PlacementHistory] {

@@ -43,6 +43,10 @@ struct PlacedStickerView: View {
     var onBringToFront: () -> Void
     var onFlip: () -> Void
     var onToggleShadow: () -> Void
+    /// エフェクト（なし→白フチ→キラキラ→…）を1つ進める
+    var onCycleEffect: () -> Void
+    /// テキストシールの文字を再編集する（選択中にもう一度タップ、またはツールバーのAa）
+    var onEditText: () -> Void
     var onTap: () -> Void
     /// ドラッグでトレイの上まで運んで離した時に呼ばれる。実際の削除は少し遅らせて、
     /// 縮小・フェードのアニメーションを見せてから確定する。
@@ -119,12 +123,27 @@ struct PlacedStickerView: View {
         isInteracting ? 6 : (placement.hasShadow ? 4 : 0)
     }
 
+    private var isGlowing: Bool {
+        placement.effect == .glow
+    }
+
+    /// このシールが文字から作られたもの（再編集できる）か
+    private var isTextSticker: Bool {
+        placement.sticker?.isTextSticker == true
+    }
+
     var body: some View {
-        StickerImageView(fileName: placement.sticker?.thumbnailFileName ?? placement.sticker?.imageFileName)
+        StickerImageView(
+            fileName: placement.sticker?.thumbnailFileName ?? placement.sticker?.imageFileName,
+            effect: placement.effect
+        )
             .frame(width: baseSize, height: baseSize)
             .scaleEffect(x: flipMultiplier * displayScale, y: displayScale)
             .rotationEffect(displayRotation)
             .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: shadowYOffset)
+            // キラキラ（グロー）エフェクト：白＋淡い黄色の2重シャドウで光らせる
+            .shadow(color: isGlowing ? .white.opacity(0.85) : .clear, radius: isGlowing ? 10 : 0)
+            .shadow(color: isGlowing ? .yellow.opacity(0.5) : .clear, radius: isGlowing ? 18 : 0)
             // 浮き上がり演出は1本指ドラッグの時だけ。ピンチ中は指の下の点と表示が
             // ずれないよう等倍のまま1:1で追従させる（Instagramの編集と同じ挙動）。
             .scaleEffect(isInteracting && !isPinching ? 1.06 : 1.0)
@@ -147,9 +166,15 @@ struct PlacedStickerView: View {
             .simultaneousGesture(transformGesture, including: isEditMode ? .all : .none)
             .onTapGesture {
                 // 編集中はタップを選択に使い、詳細シートは開かない。
+                // 選択済みのテキストシールをもう一度タップすると文字の再編集へ
+                // （IGで文字をタップすると編集に入るのと同じ流れ）。
                 // 閲覧時のみタップで詳細を表示する。
                 if isEditMode {
-                    onSelect()
+                    if isSelected, isTextSticker {
+                        onEditText()
+                    } else {
+                        onSelect()
+                    }
                 } else {
                     onTap()
                 }
@@ -202,6 +227,18 @@ struct PlacedStickerView: View {
                 Button(action: onToggleShadow) {
                     Image(systemName: placement.hasShadow ? "sun.max.fill" : "sun.max")
                 }
+                Divider().frame(height: 14)
+                // エフェクトはIGのステッカーと同じくタップのたびに切り替わる
+                Button(action: onCycleEffect) {
+                    Image(systemName: placement.effect.iconName)
+                        .opacity(placement.effect == StickerEffect.none ? 0.6 : 1)
+                }
+                if isTextSticker {
+                    Divider().frame(height: 14)
+                    Button(action: onEditText) {
+                        Image(systemName: "character.cursor.ibeam")
+                    }
+                }
             }
             .font(.system(size: 13, weight: .semibold))
             .foregroundStyle(.white)
@@ -240,6 +277,7 @@ struct PlacedStickerView: View {
             scale: displayScale,
             rotation: displayRotation,
             flipped: placement.isFlippedHorizontally,
+            effect: placement.effect,
             overTray: overTray
         )
     }
