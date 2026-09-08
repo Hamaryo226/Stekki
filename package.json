@@ -1,0 +1,32 @@
+{
+  "name": "stekki",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "prepare": "node scripts/sync-native.cjs",
+    "start": "expo start --dev-client",
+    "ios": "node scripts/sync-native.cjs && expo run:ios",
+    "prebuild": "node scripts/sync-native.cjs && expo prebuild --platform ios",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.cjs",
+    "export:ios": "expo export --platform ios",
+    "verify:native": "node scripts/verify-native.cjs"
+  },
+  "dependencies": {
+    "expo": "~57.0.21",
+    "expo-build-properties": "~57.0.17",
+    "expo-dev-client": "~57.0.18",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

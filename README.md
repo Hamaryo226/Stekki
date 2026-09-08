@@ -4,7 +4,20 @@
 アカウント登録やサーバー通信は一切行わず、**すべての機能が端末内（オンデバイス）だけで完結**します。
 ローカルのシール帳編集機能（作成・貼付・移動・拡縮・回転・履歴）に加えて、AirDrop 等でシールを「送る」「受け取る」機能（`.stickertrade` ファイル）を搭載しています。
 
-## 起動方法
+## Expo版の起動
+
+このブランチでは、Expo SDK 57 / React Nativeのシール帳一覧から、既存SwiftUIの編集・作成・送受信画面を開くiOSアプリに移行しています。SwiftDataとVisionはローカルExpoモジュールで再利用します。**全画面のReact Native化ではなく、iOS向けハイブリッド構成です。Expo Go / Android / Webには対応していません。**
+
+```sh
+npm ci
+npm run ios
+```
+
+macOS・Xcode・CocoaPodsが必要です。WindowsではEAS BuildでiOS Development Buildを作成できます。詳細な手順、既存データの引き継ぎ条件、未検証項目は [Expo移行ガイド](docs/expo-migration.md) を参照してください。
+
+以下は再利用しているSwift実装の説明です。
+
+## 従来のXcodeプロジェクトの起動方法
 
 1. `Stekki.xcodeproj` を Xcode（26系を推奨。プロジェクトは iOS 17.0 以降をターゲットにしています）で開く。
 2. 実行ターゲットを `Stekki` に、シミュレータまたは実機を選択する。

@@ -1,0 +1,8 @@
+node_modules/
+.expo/
+dist/
+/ios/
+/android/
+modules/stekki-native/ios/Core/
+*.xcuserstate
+.DS_Store
