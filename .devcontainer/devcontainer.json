@@ -1,0 +1,8 @@
+{
+  "name": "Stekki — iPhone / Expo Go",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [8081],
+  "portsAttributes": { "8081": { "label": "Expo Metro", "onAutoForward": "notify" } },
+  "customizations": { "vscode": { "extensions": ["expo.vscode-expo-tools"] } }
+}
