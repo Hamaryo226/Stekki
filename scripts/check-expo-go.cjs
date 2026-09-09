@@ -4,7 +4,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const pkg = require(path.join(root, 'package.json'));
 const bundled = require('expo/bundledNativeModules.json');
-const pure = new Set(['expo', 'react', 'react-native', 'fflate']);
+const pure = new Set(['expo', 'react', 'react-native', 'fflate', '@react-navigation/native', '@react-navigation/native-stack']);
 for (const name of Object.keys(pkg.dependencies)) {
   assert.ok(pure.has(name) || Object.hasOwn(bundled, name), `${name} is not in the Expo bundled-module catalog`);
 }

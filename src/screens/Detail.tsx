@@ -1,3 +1,4 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { Alert, Image, ScrollView, Text, TextInput, View } from 'react-native';
 import type { SerialStore } from '../serial-store';
@@ -8,10 +9,10 @@ export function Detail({ store, id, back }: { store: SerialStore; id: string; ba
   const state = useLibrary(store), sticker = state.stickers.find(s => s.id === id);
   const c = useTheme(), { busy, run } = useTask();
   const [author, setAuthor] = useState(sticker?.author ?? ''), [sender, setSender] = useState(sticker?.receivedFrom ?? '');
-  if (!sticker) return <Header title="シールは削除されました" back={back} />;
+  if (!sticker) return <Header nativeBack title="シールは削除されました" back={back} />;
   const book = state.books.find(b => b.pages.some(p => p.id === sticker.placement?.pageId));
-  return <View style={ui.fill}><Header title="シールの詳細" back={busy ? undefined : back} />
-    <ScrollView contentContainerStyle={ui.body}>
+  return <SafeAreaView edges={['bottom']} style={ui.fill}><Header nativeBack title="シールの詳細" back={busy ? undefined : back} />
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive" contentContainerStyle={ui.body}>
       <ScrollView style={{ height: 260, borderRadius: 18, backgroundColor: '#D6D8DF' }} minimumZoomScale={1} maximumZoomScale={4} centerContent>
         <Image source={{ uri: imageURI(sticker.file) }} style={{ width: 300, height: 260, alignSelf: 'center' }} resizeMode="contain" />
       </ScrollView>
@@ -33,5 +34,5 @@ export function Detail({ store, id, back }: { store: SerialStore; id: string; ba
         { text: 'キャンセル', style: 'cancel' }, { text: '削除', style: 'destructive', onPress: () => { void run(() => deleteSticker(store, sticker)).then(ok => { if (ok) back(); }); } },
       ])} />
     </ScrollView>
-  </View>;
+  </SafeAreaView>;
 }

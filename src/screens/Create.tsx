@@ -1,8 +1,10 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRef, useState } from 'react';
 import { Image, Keyboard, Pressable, ScrollView, Switch, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat, type ImageResult } from 'expo-image-manipulator';
 import { captureRef, releaseCapture } from 'react-native-view-shot';
+import SegmentedControl from '@react-native-segmented-control/segmented-control';
 import Slider from '@react-native-community/slider';
 import type { SerialStore } from '../serial-store';
 import { addImage, safelyDelete } from '../storage';
@@ -36,10 +38,10 @@ export function Create({ store, kind, back }: { store: SerialStore; kind: 'photo
   const choice = (field: 'color' | 'stroke' | 'plate') => <View style={ui.row}>{colors.map(value => <Pressable key={value} accessibilityRole="button"
     accessibilityLabel={`${field === 'color' ? '文字' : field === 'stroke' ? '縁取り' : '背景'}色 ${value}`} onPress={() => setStyle(s => ({ ...s, [field]: value }))}
     style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: value, borderWidth: style[field] === value ? 3 : 1, borderColor: style[field] === value ? c.accent : '#888888' }} />)}</View>;
-  return <View style={ui.fill}><Header title={kind === 'photo' ? '写真シール' : '文字シール'} back={busy ? undefined : close}
-    right={<Button title={busy ? '保存中…' : '保存'} disabled={busy || (kind === 'photo' ? !loaded : !text.trim())} onPress={save} />} />
-    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={ui.body}>
-      <Pressable onPress={Keyboard.dismiss} style={{ alignItems: 'center', padding: 10, borderRadius: 18, backgroundColor: '#D6D8DF' }}>
+  return <SafeAreaView edges={['bottom']} style={ui.fill}><Header title={kind === 'photo' ? '写真シール' : '文字シール'} back={busy ? undefined : close}
+    right={<Button small title={busy ? '保存中…' : '保存'} disabled={busy || (kind === 'photo' ? !loaded : !text.trim())} onPress={save} />} />
+    <ScrollView automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={ui.body}>
+      <Pressable onPress={Keyboard.dismiss} style={{ alignItems: 'center', padding: 10, borderRadius: 10, backgroundColor: '#D6D8DF' }}>
         <View ref={capture} collapsable={false} style={{ width: previewWidth, height: previewHeight, backgroundColor: 'transparent', overflow: 'hidden', borderRadius: kind === 'photo' ? Math.min(previewWidth, previewHeight) * radius : 0 }}>
           {kind === 'text' ? <TextSticker text={text} style={style} /> : photo ? <Image source={{ uri: photo.uri }} onLoad={() => setLoaded(true)} onError={() => setLoaded(false)} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : null}
         </View>
@@ -53,14 +55,16 @@ export function Create({ store, kind, back }: { store: SerialStore; kind: 'photo
           onChangeText={value => setText(value.split('\n').slice(0, 4).join('\n'))} style={[ui.input, { backgroundColor: c.card, color: c.text }]} />
         <Label>最大60文字・4行。長い文章は改行して調整できます。</Label>
         <ScrollView horizontal contentContainerStyle={{ gap: 8 }}>{textFonts.map(font => <Button key={font.value} title={`${style.font === font.value ? '✓ ' : ''}${font.name}`} small onPress={() => setStyle(s => ({ ...s, font: font.value }))} />)}</ScrollView>
-        <View style={ui.row}>{(['plain', 'arch', 'wave', 'bulge'] as const).map((shape, i) => <Button key={shape} title={`${style.shape === shape ? '✓ ' : ''}${['通常', 'アーチ', '波', 'ふくらみ'][i]}`} small onPress={() => setStyle(s => ({ ...s, shape }))} />)}</View>
+        <Label>文字の形</Label><SegmentedControl values={['通常', 'アーチ', '波', 'ふくらみ']} enabled={!busy}
+          selectedIndex={(['plain', 'arch', 'wave', 'bulge'] as const).indexOf(style.shape)}
+          onChange={event => { const shape = (['plain', 'arch', 'wave', 'bulge'] as const)[event.nativeEvent.selectedSegmentIndex]; setStyle(s => ({ ...s, shape })); }} />
         {style.shape !== 'plain' && <><Label>形の強さ</Label><Slider minimumValue={-1} maximumValue={1} value={style.intensity} onValueChange={intensity => setStyle(s => ({ ...s, intensity }))} accessibilityLabel="形の強さ" /></>}
         <Label>文字色</Label>{choice('color')}
         <Label>縁取り</Label>{choice('stroke')}<Slider minimumValue={0} maximumValue={8} value={style.strokeWidth} onValueChange={strokeWidth => setStyle(s => ({ ...s, strokeWidth }))} accessibilityLabel="縁取りの太さ" />
-        <View style={ui.row}><Text style={{ color: c.text }}>背景プレート</Text><Switch value={!!style.plate} onValueChange={value => setStyle(s => ({ ...s, plate: value ? '#FFFFFF' : undefined }))} /></View>
+        <View style={ui.row}><Text style={{ color: c.text, fontSize: 17, flex: 1 }}>背景プレート</Text><Switch value={!!style.plate} onValueChange={value => setStyle(s => ({ ...s, plate: value ? '#FFFFFF' : undefined }))} /></View>
         {style.plate && choice('plate')}
       </>}
       <Label>作成者</Label><TextInput accessibilityLabel="作成者" maxLength={120} value={author} onChangeText={setAuthor} style={[ui.input, { backgroundColor: c.card, color: c.text }]} />
     </ScrollView>
-  </View>;
+  </SafeAreaView>;
 }
