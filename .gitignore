@@ -3,6 +3,5 @@ node_modules/
 dist/
 /ios/
 /android/
-modules/stekki-native/ios/Core/
 *.xcuserstate
 .DS_Store

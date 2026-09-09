@@ -1,36 +1,15 @@
 import type { ExpoConfig } from 'expo/config';
 
 const config: ExpoConfig = {
-  name: 'Stekki Expo',
+  name: 'Stekki',
   slug: 'stekki',
   version: '1.0.0',
   scheme: 'stekki',
   platforms: ['ios'],
   userInterfaceStyle: 'automatic',
-  ios: {
-    bundleIdentifier: 'hamaryo.Stekki',
-    supportsTablet: true,
-    infoPlist: {
-      CFBundleDisplayName: 'Stekki',
-      LSSupportsOpeningDocumentsInPlace: false,
-      UTExportedTypeDeclarations: [{
-        UTTypeIdentifier: 'jp.hamaryo.stekki.stickertrade',
-        UTTypeDescription: 'Stekki Sticker Trade',
-        UTTypeConformsTo: ['public.data'],
-        UTTypeTagSpecification: {
-          'public.filename-extension': ['stickertrade'],
-          'public.mime-type': 'application/vnd.stekki.stickertrade+zip',
-        },
-      }],
-      CFBundleDocumentTypes: [{
-        CFBundleTypeName: 'Stekki Sticker Trade',
-        CFBundleTypeRole: 'Viewer', LSHandlerRank: 'Owner',
-        LSItemContentTypes: ['jp.hamaryo.stekki.stickertrade'],
-      }],
-    },
-  },
+  ios: { bundleIdentifier: 'hamaryo.Stekki', supportsTablet: true },
   plugins: [
-    ['expo-build-properties', { ios: { deploymentTarget: '17.0' } }],
+    ['expo-image-picker', { photosPermission: 'シールにする写真を選びます。', cameraPermission: false, microphonePermission: false }],
   ],
 };
 export default config;

@@ -1,11 +1,13 @@
-name: Expo validation
+name: Expo Go validation
 on:
   pull_request:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  javascript:
+  expo-go:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,23 +16,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:expo-go
       - run: npm run typecheck
       - run: npm test
-      - run: npm run verify:native
       - run: npm run export:ios
-  ios:
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run prebuild -- --no-install
-      - run: pod install --project-directory=ios
-      - name: Compile the Expo app and native module without signing
-        run: >-
-          xcodebuild -workspace ios/StekkiExpo.xcworkspace -scheme StekkiExpo
-          -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
-          CODE_SIGNING_ALLOWED=NO build
