@@ -49,6 +49,15 @@ Expo Goの削除やアプリデータ消去でローカルデータが失われ�
 - 文字の描画はSVGとPNGキャプチャ。旧UIKit描画との字形・字間の完全一致は保証しません。長文は60文字・4行以内。
 - 今回はiOSが対象。AndroidとWebの動作保証・専用調整は行っていません。
 
+## iPhoneのデザイン
+
+- React Navigationのnative-stackでiOSのナビゲーションバー、戻る操作、画面遷移を使用。
+- シール帳は大きなタイトルとインセット付き一覧。アイコンはSF Symbols。
+- 作成・受信はモーダル表示。キャンセルと保存は上部に配置し、処理中の誤操作を防止。作成・受信のスワイプ終了は無効にし、キャンセル操作で一時画像を片付けます。
+- 文字の形はiOS標準のセグメントコントロール。スライダー、スイッチ、写真選択、共有は引き続きネイティブUI。
+- システムフォント、iOSの配色に合わせたライト／ダークテーマ、ホームインジケータの余白、入力中のキーボード回避に対応。
+- 一覧や編集キャンバスはReact NativeのViewで構成。独自Swiftコードや開発ビルドは不要です。
+
 ## 検証
 
 ```sh
@@ -67,6 +76,7 @@ npm run export:ios
 3. 編集モードで貼付・移動・2本指拡縮／回転・トレイへの返却、ページ削除と履歴を確認。
 4. ファイルから受信してキャンセルしたときにトレイが増えず、追加を選んだ場合だけ増えること。
 5. 旧Swift版との双方の送受信、破損ファイル拒否後の正常ファイル受信を確認。
-6. Codespacesの作成からExpo Goの起動までをiPhoneのSafariだけで行えること。
+6. ライト／ダーク表示、大きな文字設定、戻るスワイプ、モーダルの保存・キャンセル、キーボード表示中の入力を確認。画面遷移後もシールのドラッグ位置が指と一致すること。
+7. Codespacesの作成からExpo Goの起動までをiPhoneのSafariだけで行えること。
 
 参考：[Expo Go](https://expo.dev/go)、[Expo CLIのトンネル](https://docs.expo.dev/more/expo-cli/#tunneling)、[GitHub Codespacesのブランチ指定リンク](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/setting-up-your-repository/facilitating-quick-creation-and-resumption-of-codespaces)。

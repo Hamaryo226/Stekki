@@ -1,4 +1,7 @@
-import { useRef, useState } from 'react';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import Slider from '@react-native-community/slider';
 import type { SerialStore } from '../serial-store';
@@ -18,10 +21,12 @@ export function Editor({ store, bookId, pageId, setPage, back, detail, create }:
   const [frame, setFrame] = useState<CanvasFrame>({ x: 0, y: 0, width: 1, height: 1 });
   const width = Math.min(window.width - 40, 540), height = Math.max(140, Math.min(width * 1.3, window.height - (editing ? 400 : 230)));
   const measure = () => canvas.current?.measureInWindow((x, y, w, h) => setFrame({ x, y, width: w, height: h }));
+  const navigation = useNavigation<NativeStackNavigationProp<Record<string, object | undefined>>>();
+  useEffect(() => navigation.addListener('transitionEnd', () => { requestAnimationFrame(measure); }), [navigation]);
   const transform = (patch: Partial<Placement>) => { if (selected) void run(() => store.dispatch({ type: 'transform', id: selected.id, patch })); };
   const placed = state.stickers.filter(s => s.placement?.pageId === page.id).sort((a, b) => a.placement!.z - b.placement!.z);
-  return <View style={ui.fill}>
-    <Header title={book.title} back={back} right={<Button title={editing ? '完了' : '編集'} onPress={() => { setEditing(!editing); select(undefined); }} />} />
+  return <SafeAreaView edges={['bottom']} style={ui.fill}>
+    <Header nativeBack title={book.title} back={back} right={<Button small title={editing ? '完了' : '編集'} onPress={() => { setEditing(!editing); select(undefined); }} />} />
     <View style={[ui.row, { paddingHorizontal: 20, paddingBottom: 10 }]}>
       <Button title="前へ" small disabled={book.pages.indexOf(page) === 0} onPress={() => { select(undefined); setPage(book.pages[book.pages.indexOf(page) - 1].id); }} />
       <Label>{book.pages.indexOf(page) + 1} / {book.pages.length}ページ</Label>
@@ -59,5 +64,5 @@ export function Editor({ store, bookId, pageId, setPage, back, detail, create }:
       </ScrollView>
       <View style={ui.row}><Button title="写真から" onPress={() => create('photo')} /><Button title="文字から" onPress={() => create('text')} /></View>
     </View>}
-  </View>;
+  </SafeAreaView>;
 }
